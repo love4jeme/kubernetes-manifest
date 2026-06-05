@@ -2,22 +2,24 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bank-ingress
+  namespace: bank-app
   annotations:
-    kubernetes.io/ingress.class: "external-nginx"
-    cert-manager.io/cluster-issuer: http-01-production
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
-  ingressClassName: external-nginx
-  tls:
-  - hosts:
-    - bankapi.pod15engineers.online  # bankend url
-    - bank.pod15engineers.online     # frontend url
-    secretName: bank-pod15engineers.online
+  ingressClassName: alb
   rules:
-  - host: bank.pod15engineers.online
-    http:
+  - http:
       paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: bank-backend-service
+            port:
+              number: 8080
       - path: /
         pathType: Prefix
         backend:
@@ -25,13 +27,3 @@ spec:
             name: bank-frontend-service
             port:
               number: 3000
-  - host: bankapi.pod15engineers.online
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: bank-backend-service
-            port:
-              number: 8080
